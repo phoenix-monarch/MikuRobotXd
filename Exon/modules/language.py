@@ -45,20 +45,16 @@ def paginate(iterable: Iterable, page_size: int) -> Generator[List, None, None]:
             itertools.islice(i1, page_size, None),
             list(itertools.islice(i2, page_size)),
         )
-        if len(page) == 0:
+        if not page:
             break
         yield page
 
 
 def gs(chat_id: Union[int, str], string: str) -> str:
-    try:
-        lang = sql.get_chat_lang(chat_id)
-        return get_string(lang, string)
-    except:
-        return "ᴍᴇ ɴᴏᴡ ʙᴜsʏ ᴡʜᴇɴ ғʀᴇᴇ ᴀᴅᴅ ᴛʜɪs "
+    lang = sql.get_chat_lang(chat_id)
+    return get_string(lang, string)
 
 
-@Exoncmd(command="language")
 @user_admin
 def set_lang(update: Update, _) -> None:
     chat = update.effective_chat
@@ -68,28 +64,25 @@ def set_lang(update: Update, _) -> None:
         get_language(sql.get_chat_lang(chat.id))[:-3]
     )
 
-    keyb = []
-    for code, name in get_languages().items():
-        keyb.append(
-            InlineKeyboardButton(
-                text=name,
-                callback_data=f"setLang_{code}",
-            )
+    keyb = [
+        InlineKeyboardButton(
+            text=name,
+            callback_data=f"setLang_{code}",
         )
-
+        for code, name in get_languages().items()
+    ]
     keyb = list(paginate(keyb, 2))
     keyb.append(
         [
             InlineKeyboardButton(
-                text="ʜᴇʟᴘ ᴜs ɪɴ ᴛʀᴀɴsʟᴀᴛɪᴏɴs",
-                url="https://github.com/Abishnoi69/ExonRobot",  # plz. Don't edit and change
+                text="Help us in translations",
+                url="https://poeditor.com/join/project?hash=oJISpjNcEx",
             )
         ]
     )
     msg.reply_text(msg_text, reply_markup=InlineKeyboardMarkup(keyb))
 
 
-@Exoncallback(pattern=r"setLang_")
 @user_admin_no_reply
 def lang_button(update: Update, _) -> None:
     query = update.callback_query
@@ -102,3 +95,12 @@ def lang_button(update: Update, _) -> None:
     query.message.edit_text(
         gs(chat.id, "set_chat_lang").format(get_language(lang)[:-3])
     )
+
+
+SETLANG_HANDLER = CommandHandler("language", set_lang, run_async=True)
+SETLANG_BUTTON_HANDLER = CallbackQueryHandler(
+    lang_button, pattern=r"setLang_", run_async=True
+)
+
+dispatcher.add_handler(SETLANG_HANDLER)
+dispatcher.add_handler(SETLANG_BUTTON_HANDLER)
